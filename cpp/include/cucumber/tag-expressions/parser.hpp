@@ -97,6 +97,13 @@ namespace cucumber::tag_expressions {
         static std::unique_ptr<Expression> parse(std::string_view text);
 
     private:
+        /**
+         * @brief Parses a tag expression from the given parts and text.
+         *
+         * @param parts A vector of string parts that make up the tag expression to be parsed.
+         * @param text A string view of the original text being parsed.
+         * @return A unique pointer to the parsed Expression object.
+         */
         static std::unique_ptr<Expression> parse(const std::vector<std::string>& parts, std::string_view text);
 
         /**
@@ -158,13 +165,60 @@ namespace cucumber::tag_expressions {
                                                   size_t error_index);
 
         /**
-         * @brief 
+         * @brief Ensures that a token has the expected type.
+         * 
+         * Validates that a token at a given position in the parts list matches the expected token type.
+         * If the actual token type does not match the expected type, an exception or error is raised.
+         * 
+         * @param parts A vector of string parts that make up the parsed expression.
+         * @param expected The expected TokenType for validation.
+         * @param actual The actual TokenType found at the specified index.
+         * @param last_part A string view representing the last parsed part of the expression.
+         * @param index The position in the parts vector where the token validation occurs.
+         * 
+         * @throws std::exception If the actual token type does not match the expected token type.
          */
         static void ensure_expected_token_type(const std::vector<std::string>& parts,
                                                TokenType expected,
                                                TokenType actual,
                                                std::string_view last_part,
                                                size_t index);
+
+        /**
+         * @brief Handles the preparation of a binary expression before pushing it onto the operations stack.
+         *
+         * This static method manages the precedence and associativity of binary operators in tag expression parsing.
+         * It processes any pending operations with higher or equal precedence before adding a new operator to the stack.
+         *
+         * @param operations A stack of tokens representing pending operations to be processed.
+         * @param expressions A vector of unique pointers to Expression objects that make up the expression tree.
+         * @param token_info Information about the current token being processed, including its type and value.
+         *
+         * @note This method is part of the Shunting Yard algorithm implementation for expression parsing.
+         * @note The method ensures correct operator precedence and handles the conversion of infix notation to an expression tree.
+         */
+        static void before_push_binary_expression(std::stack<Token>& operations,
+                                                  std::vector<std::unique_ptr<Expression>>& expressions,
+                                                  const TokenInfo& token_info);
+
+        /**
+         * @brief Processes operations and expressions when a closing parenthesis is encountered.
+         * 
+         * This static method handles the parsing logic that occurs before pushing a close parenthesis
+         * token onto the operations stack. It manages the precedence and associativity of operators
+         * by popping operations from the stack and converting them into expression nodes.
+         * 
+         * @param operations A stack of tokens representing pending operations to be processed.
+         *                   Operations are popped and converted to expressions based on precedence rules.
+         * @param expressions A vector of unique_ptr to Expression objects that accumulate the
+         *                    resulting expression tree nodes.
+         * 
+         * @note This method is typically called during parsing when a closing parenthesis is encountered,
+         *       ensuring that all operations within the parentheses are properly evaluated and converted
+         *       to their corresponding expression objects before closing the parenthetical scope.
+         */
+        static void before_push_close_parenthesis_expression(std::stack<Token>& operations,
+                                                             std::vector<std::unique_ptr<Expression>>& expressions);
         /**
          * @brief Convenience function to access private members for testing.
          */

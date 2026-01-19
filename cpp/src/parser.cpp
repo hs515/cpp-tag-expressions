@@ -201,6 +201,31 @@ void TagExpressionParser::ensure_expected_token_type(
     }
 };
 
+
+void TagExpressionParser::before_push_binary_expression(
+    std::stack<Token>& operations, std::vector<std::unique_ptr<Expression>>& expressions, const TokenInfo& token_info) {
+    while (!operations.empty()) {
+        Token last_operation = operations.top();
+        const auto& last_op_info = get_token_info(last_operation);
+        if (last_op_info.is_operation() &&
+            token_info.has_lower_precedence_than(last_op_info)) {
+            operations.pop();
+            push_expression(last_operation, expressions);
+        } else {
+            break;
+        }
+    }
+}
+
+void TagExpressionParser::before_push_close_parenthesis_expression(
+    std::stack<Token>& operations, std::vector<std::unique_ptr<Expression>>& expressions) {
+    while (operations.top() != Token::OPEN_PARENTHESIS) {
+        Token last_operation = operations.top();
+        operations.pop();
+        push_expression(last_operation, expressions);
+    }
+}
+
 std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
     auto parts = tokenize(text);
     
@@ -229,18 +254,7 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::vector<std::st
                                   Token token,
                                   const TokenInfo& token_info) {
         ensure_expected_token_type(parts, expected_token_type, TokenType::OPERATOR, last_part, index);
-        while (!operations.empty()) {
-            Token last_operation = operations.top();
-            const auto& last_op_info = get_token_info(last_operation);
-            if (last_op_info.is_operation() &&
-                token_info.has_lower_precedence_than(last_op_info)) {
-                operations.pop();
-                push_expression(last_operation, expressions);
-            } else {
-                break;
-            }
-        }
-
+        before_push_binary_expression(operations, expressions, token_info);
         operations.push(token);
         expected_token_type = TokenType::OPERAND;
     };
@@ -254,7 +268,6 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::vector<std::st
 
     auto parse_close_parenthesis_token = [&](size_t index) {
         ensure_expected_token_type(parts, expected_token_type, TokenType::OPERATOR, last_part, index);
-
         if (operations.empty()) {
             // CASE: TOO FEW OPEN-PARENTHESIS
             std::string message = "Missing '(': Too few open-parens in: " + std::string{text};
@@ -262,12 +275,7 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::vector<std::st
             throw TagExpressionError(message);
         }
 
-        while (operations.top() != Token::OPEN_PARENTHESIS) {
-            Token last_operation = operations.top();
-            operations.pop();
-            push_expression(last_operation, expressions);
-        }
-
+        before_push_close_parenthesis_expression(operations, expressions);
         if (operations.top() == Token::OPEN_PARENTHESIS) {
             operations.pop();
             expected_token_type = TokenType::OPERATOR;
