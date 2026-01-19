@@ -2,6 +2,7 @@
 #define CUCUMBER_TAG_EXPRESSIONS_PARSER_HPP_
 
 #include <memory>
+#include <stack>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -151,8 +152,8 @@ namespace cucumber::tag_expressions {
          * @return std::string Detailed error message with error-position marked
          */
         static std::string make_error_description(std::string_view message,
-                                                const std::vector<std::string>& parts,
-                                                size_t error_index);
+                                                  const std::vector<std::string>& parts,
+                                                  size_t error_index);
 
         /**
          * @brief Convenience function to access private members for testing.

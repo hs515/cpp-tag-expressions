@@ -3,12 +3,12 @@
 #include <algorithm>
 #include <map>
 #include <sstream>
-#include <stack>
 
 namespace cucumber::tag_expressions {
 
 namespace {
 
+    // Token information map
     const std::map<Token, TokenInfo>& get_token_map() {
         static const std::map<Token, TokenInfo> map = {
             {Token::OR, TokenInfo("or", 0, Associative::LEFT, TokenType::OPERATOR)},
@@ -203,86 +203,20 @@ std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
         return std::make_unique<True>();
     }
 
+    auto token_type_name = [&](TokenType type) -> std::string {
+        std::string name = (type == TokenType::OPERAND) ? "operand" : "operator";
+        return std::move(name);
+    };
+
     auto ensure_expected_token_type = [&](TokenType expected,
                                           TokenType actual,
                                           std::string_view last_part,
                                           size_t index) {
         if (expected != actual) {
-            std::string expected_name = (expected == TokenType::OPERAND) ? "operand" : "operator";
             std::ostringstream oss;
-            oss << "Syntax error. Expected " << expected_name << " after " << last_part;
+            oss << "Syntax error. Expected " << token_type_name(expected) << " after " << last_part;
             std::string message = make_error_description(oss.str(), parts, index);
             throw TagExpressionError(message);
-        }
-    };
-
-    auto parse_literal_operand = [&](TokenType expected,
-                                     TokenType actual,
-                                     std::string_view last_part,
-                                     size_t index,
-                                     std::string_view part,
-                                     std::vector<std::unique_ptr<Expression>>& expressions,
-                                     TokenType& expected_token_type) {
-        ensure_expected_token_type(expected, actual, last_part, index);
-        expressions.emplace_back(make_operand(part));
-        expected_token_type = TokenType::OPERATOR;
-    };
-
-    auto parse_token = [&](TokenType expected,
-                           TokenType actual,
-                           std::string_view last_part,
-                           size_t index,
-                           Token token,
-                           std::string_view part,
-                           std::stack<Token>& operations,
-                           std::vector<std::unique_ptr<Expression>>& expressions,
-                           TokenType& expected_token_type) {
-        const auto& token_info = get_token_info(token);
-        
-        if (token_info.is_binary()) {
-            // "and" / "or" operator
-            ensure_expected_token_type(expected_token_type, TokenType::OPERATOR, last_part, index);
-            
-            while (!operations.empty()) {
-                Token last_operation = operations.top();
-                const auto& last_op_info = get_token_info(last_operation);
-                if (last_op_info.is_operation() &&
-                    token_info.has_lower_precedence_than(last_op_info)) {
-                    operations.pop();
-                    push_expression(last_operation, expressions);
-                } else {
-                    break;
-                }
-            }
-
-            operations.push(token);
-            expected_token_type = TokenType::OPERAND;
-        } else if (token_info.is_unary() || (token == Token::OPEN_PARENTHESIS)) {
-            // "not" operator
-            ensure_expected_token_type(expected_token_type, TokenType::OPERAND, last_part, index);
-            operations.push(token);
-            expected_token_type = TokenType::OPERAND;
-        } else if (token == Token::CLOSE_PARENTHESIS) {
-            // ")" token
-            ensure_expected_token_type(expected_token_type, TokenType::OPERATOR, last_part, index);
-
-            if (operations.empty()) {
-                // CASE: TOO FEW OPEN-PARENTHESIS
-                std::string message = "Missing '(': Too few open-parens in: " + std::string{text};
-                message = make_error_description(message, parts, index);
-                throw TagExpressionError(message);
-            }
-
-            while (operations.top() != Token::OPEN_PARENTHESIS) {
-                Token last_operation = operations.top();
-                operations.pop();
-                push_expression(last_operation, expressions);
-            }
-
-            if (operations.top() == Token::OPEN_PARENTHESIS) {
-                operations.pop();
-                expected_token_type = TokenType::OPERATOR;
-            }
         }
     };
 
@@ -291,30 +225,96 @@ std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
     std::string last_part = "BEGIN";
     TokenType expected_token_type = TokenType::OPERAND;
 
+    auto parse_literal_operand = [&](TokenType actual,
+                                     size_t index,
+                                     std::string_view part) {
+        ensure_expected_token_type(expected_token_type, actual, last_part, index);
+        expressions.emplace_back(make_operand(part));
+        expected_token_type = TokenType::OPERATOR;
+    };
+
+    auto parse_binary_token = [&](size_t index,
+                                  Token token,
+                                  const TokenInfo& token_info,
+                                  std::string_view part) {
+        ensure_expected_token_type(expected_token_type, TokenType::OPERATOR, last_part, index);
+        
+        while (!operations.empty()) {
+            Token last_operation = operations.top();
+            const auto& last_op_info = get_token_info(last_operation);
+            if (last_op_info.is_operation() &&
+                token_info.has_lower_precedence_than(last_op_info)) {
+                operations.pop();
+                push_expression(last_operation, expressions);
+            } else {
+                break;
+            }
+        }
+
+        operations.push(token);
+        expected_token_type = TokenType::OPERAND;
+    };
+
+    auto parse_unary_token = [&](size_t index,
+                                 Token token,
+                                 const TokenInfo& token_info,
+                                 std::string_view part) {
+        ensure_expected_token_type(expected_token_type, TokenType::OPERAND, last_part, index);
+        operations.push(token);
+        expected_token_type = TokenType::OPERAND;
+    };
+
+    auto parse_close_parenthesis_token = [&](size_t index,
+                                             Token token,
+                                             const TokenInfo& token_info,
+                                             std::string_view part) {
+        ensure_expected_token_type(expected_token_type, TokenType::OPERATOR, last_part, index);
+
+        if (operations.empty()) {
+            // CASE: TOO FEW OPEN-PARENTHESIS
+            std::string message = "Missing '(': Too few open-parens in: " + std::string{text};
+            message = make_error_description(message, parts, index);
+            throw TagExpressionError(message);
+        }
+
+        while (operations.top() != Token::OPEN_PARENTHESIS) {
+            Token last_operation = operations.top();
+            operations.pop();
+            push_expression(last_operation, expressions);
+        }
+
+        if (operations.top() == Token::OPEN_PARENTHESIS) {
+            operations.pop();
+            expected_token_type = TokenType::OPERATOR;
+        }
+    };
+
+    auto parse_selected_token = [&](TokenType actual,
+                                    size_t index,
+                                    Token token,
+                                    std::string_view part) {
+        const auto& token_info = get_token_info(token);
+        
+        if (token_info.is_binary()) {
+            // "and" / "or" operator
+            parse_binary_token(index, token, token_info, part);
+        } else if (token_info.is_unary() || (token == Token::OPEN_PARENTHESIS)) {
+            // "not" / "(" operator
+            parse_unary_token(index, token, token_info, part);
+        } else if (token == Token::CLOSE_PARENTHESIS) {
+            // ")" token
+            parse_close_parenthesis_token(index, token, token_info, part);
+        }
+    };
+
     for (size_t index = 0; index < parts.size(); ++index) {
         const auto& part = parts[index];
 
         if (Token token; !select_token(part, token)) {
             // CASE OPERAND: Literal
-            parse_literal_operand(
-                expected_token_type,
-                TokenType::OPERAND,
-                last_part,
-                index,
-                part,
-                expressions,
-                expected_token_type);
+            parse_literal_operand(TokenType::OPERAND, index, part);
         } else {
-            parse_token(
-                expected_token_type,
-                TokenType::OPERAND,
-                last_part,
-                index,
-                token,
-                part,
-                operations,
-                expressions,
-                expected_token_type);
+            parse_selected_token(TokenType::OPERAND, index, token, part);
         }
         
         last_part = part;
