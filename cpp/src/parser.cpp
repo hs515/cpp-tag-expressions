@@ -203,9 +203,9 @@ std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
         return std::make_unique<True>();
     }
 
-    auto token_type_name = [&](TokenType type) -> std::string {
+    auto token_type_name = [&](TokenType type) {
         std::string name = (type == TokenType::OPERAND) ? "operand" : "operator";
-        return std::move(name);
+        return name;
     };
 
     auto ensure_expected_token_type = [&](TokenType expected,
@@ -225,18 +225,16 @@ std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
     std::string last_part = "BEGIN";
     TokenType expected_token_type = TokenType::OPERAND;
 
-    auto parse_literal_operand = [&](TokenType actual,
-                                     size_t index,
+    auto parse_literal_operand = [&](size_t index,
                                      std::string_view part) {
-        ensure_expected_token_type(expected_token_type, actual, last_part, index);
+        ensure_expected_token_type(expected_token_type, TokenType::OPERAND, last_part, index);
         expressions.emplace_back(make_operand(part));
         expected_token_type = TokenType::OPERATOR;
     };
 
     auto parse_binary_token = [&](size_t index,
                                   Token token,
-                                  const TokenInfo& token_info,
-                                  std::string_view part) {
+                                  const TokenInfo& token_info) {
         ensure_expected_token_type(expected_token_type, TokenType::OPERATOR, last_part, index);
         
         while (!operations.empty()) {
@@ -256,18 +254,14 @@ std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
     };
 
     auto parse_unary_token = [&](size_t index,
-                                 Token token,
-                                 const TokenInfo& token_info,
-                                 std::string_view part) {
+                                 Token token) {
         ensure_expected_token_type(expected_token_type, TokenType::OPERAND, last_part, index);
         operations.push(token);
         expected_token_type = TokenType::OPERAND;
     };
 
     auto parse_close_parenthesis_token = [&](size_t index,
-                                             Token token,
-                                             const TokenInfo& token_info,
-                                             std::string_view part) {
+                                             Token token) {
         ensure_expected_token_type(expected_token_type, TokenType::OPERATOR, last_part, index);
 
         if (operations.empty()) {
@@ -289,21 +283,19 @@ std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
         }
     };
 
-    auto parse_selected_token = [&](TokenType actual,
-                                    size_t index,
-                                    Token token,
-                                    std::string_view part) {
+    auto parse_selected_token = [&](size_t index,
+                                    Token token) {
         const auto& token_info = get_token_info(token);
         
         if (token_info.is_binary()) {
             // "and" / "or" operator
-            parse_binary_token(index, token, token_info, part);
+            parse_binary_token(index, token, token_info);
         } else if (token_info.is_unary() || (token == Token::OPEN_PARENTHESIS)) {
             // "not" / "(" operator
-            parse_unary_token(index, token, token_info, part);
+            parse_unary_token(index, token);
         } else if (token == Token::CLOSE_PARENTHESIS) {
             // ")" token
-            parse_close_parenthesis_token(index, token, token_info, part);
+            parse_close_parenthesis_token(index, token);
         }
     };
 
@@ -312,9 +304,9 @@ std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
 
         if (Token token; !select_token(part, token)) {
             // CASE OPERAND: Literal
-            parse_literal_operand(TokenType::OPERAND, index, part);
+            parse_literal_operand(index, part);
         } else {
-            parse_selected_token(TokenType::OPERAND, index, token, part);
+            parse_selected_token(index, token);
         }
         
         last_part = part;
