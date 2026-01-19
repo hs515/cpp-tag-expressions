@@ -6,8 +6,8 @@ using namespace cucumber::tag_expressions;
 
 class EvaluationsTest : public ::testing::Test {
 protected:
-    std::string empty_string = "";
-    std::vector<std::string> empty_set{};
+    const std::string empty_string = "";
+    const std::vector<std::string> empty_set{};
 };
 
 TEST_F(EvaluationsTest, EmptyTag) {

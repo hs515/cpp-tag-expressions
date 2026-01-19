@@ -5,7 +5,7 @@ using namespace cucumber::tag_expressions;
 
 class ParsingTest : public ::testing::Test {
 protected:
-    std::string empty_string = "";
+    const std::string empty_string = "";
 };
 
 TEST_F(ParsingTest, EmptyTag) {
