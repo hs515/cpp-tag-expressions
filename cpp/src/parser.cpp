@@ -197,11 +197,6 @@ std::string TagExpressionParser::make_error_description(
 
 std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
     auto parts = tokenize(text);
-    
-    if (parts.empty()) {
-        // Empty tag expression is always true
-        return std::make_unique<True>();
-    }
 
     auto token_type_name = [&](TokenType type) {
         std::string name = (type == TokenType::OPERAND) ? "operand" : "operator";
@@ -298,6 +293,11 @@ std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
             parse_close_parenthesis_token(index, token);
         }
     };
+    
+    if (parts.empty()) {
+        // Empty tag expression is always true
+        return std::make_unique<True>();
+    }
 
     for (size_t index = 0; index < parts.size(); ++index) {
         const auto& part = parts[index];
