@@ -17,7 +17,7 @@ namespace cucumber::tag_expressions {
      */
     class TagExpressionError : public std::runtime_error {
     public:
-        explicit TagExpressionError(const std::string& message);
+        explicit TagExpressionError(std::string_view message);
     };
 
     /**
@@ -67,7 +67,7 @@ namespace cucumber::tag_expressions {
         bool is_binary() const;
         bool is_unary() const;
         bool has_lower_precedence_than(const TokenInfo& other) const;
-        bool matches(const std::string& text) const;
+        bool matches(std::string_view text) const;
     };
 
     /**
@@ -93,7 +93,7 @@ namespace cucumber::tag_expressions {
          * @return std::unique_ptr<Expression> Parsed expression tree
          * @throws TagExpressionError If the tag expression is invalid
          */
-        static std::unique_ptr<Expression> parse(const std::string& text);
+        static std::unique_ptr<Expression> parse(std::string_view text);
 
     private:
         /**
@@ -112,7 +112,7 @@ namespace cucumber::tag_expressions {
          * @return true if a token was found
          * @return false otherwise
          */
-        static bool select_token(const std::string& text, Token& token);
+        static bool select_token(std::string_view text, Token& token);
 
         /**
          * @brief Creates operand object from parsed text.
@@ -120,7 +120,7 @@ namespace cucumber::tag_expressions {
          * @param text Text to create operand from
          * @return std::unique_ptr<Expression> Operand object created from text
          */
-        static std::unique_ptr<Expression> make_operand(const std::string& text);
+        static std::unique_ptr<Expression> make_operand(std::string_view text);
 
         /**
          * @brief Creates a list of tokens from text.
@@ -129,7 +129,7 @@ namespace cucumber::tag_expressions {
          * @return std::vector<std::string> List of selected tokens
          * @throws TagExpressionError If the tag expression is invalid
          */
-        static std::vector<std::string> tokenize(const std::string& text);
+        static std::vector<std::string> tokenize(std::string_view text);
 
         /**
          * @brief Push a new boolean expression on the expression stack.
@@ -150,7 +150,7 @@ namespace cucumber::tag_expressions {
          * @param error_index Index of the error in the parts list
          * @return std::string Detailed error message with error-position marked
          */
-        static std::string make_error_description(const std::string& message,
+        static std::string make_error_description(std::string_view message,
                                                 const std::vector<std::string>& parts,
                                                 size_t error_index);
 
@@ -167,7 +167,7 @@ namespace cucumber::tag_expressions {
      * @return std::unique_ptr<Expression> Parsed expression tree
      * @throws TagExpressionError If the tag expression is invalid
      */
-    std::unique_ptr<Expression> parse(const std::string& text);
+    std::unique_ptr<Expression> parse(std::string_view text);
 
 }  // namespace cucumber::tag_expressions
 

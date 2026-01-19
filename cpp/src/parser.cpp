@@ -10,8 +10,7 @@ namespace cucumber::tag_expressions {
 namespace {
 
     // Token information map
-    const std::map<cucumber::tag_expressions::Token, cucumber::tag_expressions::TokenInfo>& get_token_map() {
-        using namespace cucumber::tag_expressions;
+    const std::map<Token, TokenInfo>& get_token_map() {
         static const std::map<Token, TokenInfo> map = {
             {Token::OR, TokenInfo("or", 0, Associative::LEFT, TokenType::OPERATOR)},
             {Token::AND, TokenInfo("and", 1, Associative::LEFT, TokenType::OPERATOR)},
@@ -24,8 +23,8 @@ namespace {
 
 }  // namespace
 
-TagExpressionError::TagExpressionError(const std::string& message) :
-    std::runtime_error{message} {
+TagExpressionError::TagExpressionError(std::string_view message) :
+    std::runtime_error{std::string{message}} {
 }
 
 TokenInfo::TokenInfo(std::string kw, int prec, Associative a, TokenType tt) :
@@ -52,7 +51,7 @@ bool TokenInfo::has_lower_precedence_than(const TokenInfo& other) const {
            ((assoc == Associative::RIGHT) && (precedence < other.precedence));
 }
 
-bool TokenInfo::matches(const std::string& text) const {
+bool TokenInfo::matches(std::string_view text) const {
     return keyword == text;
 }
 
@@ -65,22 +64,22 @@ const TokenInfo& TagExpressionParser::get_token_info(Token token) {
     return it->second;
 }
 
-bool TagExpressionParser::select_token(const std::string& text, Token& token) {
+bool TagExpressionParser::select_token(std::string_view text, Token& token) {
     const auto& map = get_token_map();
-    for (const auto& pair : map) {
-        if (pair.second.keyword == text) {
-            token = pair.first;
+    for (const auto& [key, value] : map) {
+        if (value.keyword == text) {
+            token = key;
             return true;
         }
     }
     return false;
 }
 
-std::unique_ptr<Expression> TagExpressionParser::make_operand(const std::string& text) {
-    return std::make_unique<Literal>(text);
+std::unique_ptr<Expression> TagExpressionParser::make_operand(std::string_view text) {
+    return std::make_unique<Literal>(std::string{text});
 }
 
-std::vector<std::string> TagExpressionParser::tokenize(const std::string& text) {
+std::vector<std::string> TagExpressionParser::tokenize(std::string_view text) {
     std::vector<std::string> tokens;
     bool escaped = false;
     std::string token;
@@ -105,11 +104,11 @@ std::vector<std::string> TagExpressionParser::tokenize(const std::string& text) 
                    (c == ')') ||
                    std::isspace(c)) {
             if (!token.empty()) {
-                tokens.push_back(token);
+                tokens.emplace_back(token);
                 token.clear();
             }
             if (!std::isspace(c)) {
-                tokens.push_back(std::string(1, c));
+                tokens.emplace_back(std::string(1, c));
             }
         } else {
             token += c;
@@ -117,7 +116,7 @@ std::vector<std::string> TagExpressionParser::tokenize(const std::string& text) 
     }
 
     if (!token.empty()) {
-        tokens.push_back(token);
+        tokens.emplace_back(token);
     }
 
     return tokens;
@@ -142,26 +141,26 @@ void TagExpressionParser::push_expression(
         expressions.pop_back();
         auto left = std::move(expressions.back());
         expressions.pop_back();
-        expressions.push_back(std::make_unique<Or>(std::move(left), std::move(right)));
+        expressions.emplace_back(std::make_unique<Or>(std::move(left), std::move(right)));
     } else if (token == Token::AND) {
         require_argcount(2);
         auto right = std::move(expressions.back());
         expressions.pop_back();
         auto left = std::move(expressions.back());
         expressions.pop_back();
-        expressions.push_back(std::make_unique<And>(std::move(left), std::move(right)));
+        expressions.emplace_back(std::make_unique<And>(std::move(left), std::move(right)));
     } else if (token == Token::NOT) {
         require_argcount(1);
         auto term = std::move(expressions.back());
         expressions.pop_back();
-        expressions.push_back(std::make_unique<Not>(std::move(term)));
+        expressions.emplace_back(std::make_unique<Not>(std::move(term)));
     } else {
         throw TagExpressionError("Unexpected token");
     }
 }
 
 std::string TagExpressionParser::make_error_description(
-    const std::string& message, const std::vector<std::string>& parts, size_t error_index) {
+    std::string_view message, const std::vector<std::string>& parts, size_t error_index) {
     
     if (error_index > parts.size()) {
         error_index = parts.size();
@@ -197,7 +196,7 @@ std::string TagExpressionParser::make_error_description(
     return oss.str();
 }
 
-std::unique_ptr<Expression> TagExpressionParser::parse(const std::string& text) {
+std::unique_ptr<Expression> TagExpressionParser::parse(std::string_view text) {
     auto parts = tokenize(text);
     
     if (parts.empty()) {
@@ -207,7 +206,7 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::string& text) 
 
     auto ensure_expected_token_type = [&](TokenType expected,
                                           TokenType actual,
-                                          const std::string& last_part,
+                                          std::string_view last_part,
                                           size_t index) {
         if (expected != actual) {
             std::string expected_name = (expected == TokenType::OPERAND) ? "operand" : "operator";
@@ -225,22 +224,16 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::string& text) 
 
     for (size_t index = 0; index < parts.size(); ++index) {
         const auto& part = parts[index];
-        Token token;
-        
-        if (!select_token(part, token)) {
+
+        if (Token token; !select_token(part, token)) {
             // CASE OPERAND: Literal
             ensure_expected_token_type(expected_token_type, TokenType::OPERAND, last_part, index);
-            expressions.push_back(make_operand(part));
+            expressions.emplace_back(make_operand(part));
             expected_token_type = TokenType::OPERATOR;
         } else {
             const auto& token_info = get_token_info(token);
             
-            if (token_info.is_unary()) {
-                // "not" operator
-                ensure_expected_token_type(expected_token_type, TokenType::OPERAND, last_part, index);
-                operations.push(token);
-                expected_token_type = TokenType::OPERAND;
-            } else if (token_info.is_binary()) {
+            if (token_info.is_binary()) {
                 // "and" / "or" operator
                 ensure_expected_token_type(expected_token_type, TokenType::OPERATOR, last_part, index);
                 
@@ -255,11 +248,11 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::string& text) 
                         break;
                     }
                 }
-                
+
                 operations.push(token);
                 expected_token_type = TokenType::OPERAND;
-            } else if (token == Token::OPEN_PARENTHESIS) {
-                // "(" token
+            } else if (token_info.is_unary() || (token == Token::OPEN_PARENTHESIS)) {
+                // "not" operator
                 ensure_expected_token_type(expected_token_type, TokenType::OPERAND, last_part, index);
                 operations.push(token);
                 expected_token_type = TokenType::OPERAND;
@@ -269,17 +262,17 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::string& text) 
 
                 if (operations.empty()) {
                     // CASE: TOO FEW OPEN-PARENTHESIS
-                    std::string message = "Missing '(': Too few open-parens in: " + text;
+                    std::string message = "Missing '(': Too few open-parens in: " + std::string{text};
                     message = make_error_description(message, parts, index);
                     throw TagExpressionError(message);
                 }
-                
+
                 while (operations.top() != Token::OPEN_PARENTHESIS) {
                     Token last_operation = operations.top();
                     operations.pop();
                     push_expression(last_operation, expressions);
                 }
-                
+
                 if (operations.top() == Token::OPEN_PARENTHESIS) {
                     operations.pop();
                     expected_token_type = TokenType::OPERATOR;
@@ -297,7 +290,7 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::string& text) 
         
         if (last_operation == Token::OPEN_PARENTHESIS) {
             // CASE: TOO MANY OPEN-PARENTHESIS
-            std::string message = "Unclosed '(': Too many open-parens in: " + text;
+            std::string message = "Unclosed '(': Too many open-parens in: " + std::string{text};
             throw TagExpressionError(message);
         }
         
@@ -312,7 +305,7 @@ std::unique_ptr<Expression> TagExpressionParser::parse(const std::string& text) 
     return std::move(expressions.back());
 }
 
-std::unique_ptr<Expression> parse(const std::string& text) {
+std::unique_ptr<Expression> parse(std::string_view text) {
     return TagExpressionParser::parse(text);
 }
 
