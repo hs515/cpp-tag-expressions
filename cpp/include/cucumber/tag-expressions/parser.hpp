@@ -97,6 +97,8 @@ namespace cucumber::tag_expressions {
         static std::unique_ptr<Expression> parse(std::string_view text);
 
     private:
+        static std::unique_ptr<Expression> parse(const std::vector<std::string>& parts, std::string_view text);
+
         /**
          * @brief Get token information for a given token enum.
          * 
@@ -155,6 +157,14 @@ namespace cucumber::tag_expressions {
                                                   const std::vector<std::string>& parts,
                                                   size_t error_index);
 
+        /**
+         * @brief 
+         */
+        static void ensure_expected_token_type(const std::vector<std::string>& parts,
+                                               TokenType expected,
+                                               TokenType actual,
+                                               std::string_view last_part,
+                                               size_t index);
         /**
          * @brief Convenience function to access private members for testing.
          */
