@@ -36,13 +36,9 @@ jobs:
           ./build/example
       - name: Generate coverage reports with gcov
         run: |
-          cd cpp
-          find build -name "*.gcda" -type f -exec gcov-13 -r {} \;
-          cd ..
-      - name: Debug gcov files
-        run: |
-          echo "Looking for source file .gcov files (expression, parser, tests):"
-          find cpp/build -name "*expression.cpp.gcov" -o -name "*parser.cpp.gcov" -o -name "*test_*.gcov" | head -10 | xargs -I {} sh -c 'echo "=== {} ===" && head -20 {}'
+          cd cpp/build
+          find . -name "*.gcda" -type f -exec gcov-13 {} \;
+          cd ../..
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
