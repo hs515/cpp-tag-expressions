@@ -45,6 +45,11 @@ jobs:
           find cpp/build -name "*.gcno" -type f | head -20
           echo "Total .gcno files found:"
           find cpp/build -name "*.gcno" -type f | wc -l
+      - name: Generate coverage reports with gcov
+        run: |
+          cd cpp/build
+          find . -name "*.gcda" -type f -exec gcov-13 -p {} \;
+          cd ../..
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
