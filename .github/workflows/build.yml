@@ -21,7 +21,9 @@ jobs:
         # Install build-essential and cmake using apt-get
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtest-dev
+          sudo apt-get install -y libgtest-dev gcov
+      - name: Verify gcov installation
+        run: which gcov && gcov --version
       - name: Run Build Wrapper
         run: |
           cd cpp
