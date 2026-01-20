@@ -26,10 +26,12 @@ jobs:
         run: |
           cd cpp
           mkdir build
-          cmake -S . -B build
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Release
-          build/example
-          build/tag_expressions_test
+          cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS=ON -DCUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE=ON
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/
+          cd build
+          ctest --verbose
+          cd ..
+          ./build/example
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
@@ -37,4 +39,5 @@ jobs:
         with:
           args: >
             --define "sonar.cfamily.compile-commands=cpp/${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
+            --define "sonar.cfamily.gcov.reportsPath=cpp/build"
 
