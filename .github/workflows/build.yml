@@ -39,6 +39,10 @@ jobs:
           cd cpp/build
           find . -name "*.gcda" -type f -exec gcov-13 {} \;
           cd ../..
+      - name: Debug gcov files
+        run: |
+          echo "First few lines of generated .gcov files:"
+          find cpp/build -name "*.gcov" -type f | head -5 | xargs -I {} sh -c 'echo "=== {} ===" && head -10 {}'
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
