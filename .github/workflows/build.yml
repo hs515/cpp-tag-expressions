@@ -32,6 +32,12 @@ jobs:
           ctest --verbose
           cd ..
           ./build/example
+      - name: Verify coverage files
+        run: |
+          echo "Checking for .gcda files:"
+          find cpp/build -name "*.gcda" -type f | head -20
+          echo "Total .gcda files found:"
+          find cpp/build -name "*.gcda" -type f | wc -l
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
