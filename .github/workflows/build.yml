@@ -30,7 +30,6 @@ jobs:
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/ --config Release
           build/example
           build/tag_expressions_test
-          cat cpp/${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
