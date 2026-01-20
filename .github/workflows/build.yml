@@ -38,6 +38,11 @@ jobs:
           find cpp/build -name "*.gcda" -type f | head -20
           echo "Total .gcda files found:"
           find cpp/build -name "*.gcda" -type f | wc -l
+          echo ""
+          echo "Checking for .gcno files:"
+          find cpp/build -name "*.gcno" -type f | head -20
+          echo "Total .gcno files found:"
+          find cpp/build -name "*.gcno" -type f | wc -l
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
