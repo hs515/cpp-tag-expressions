@@ -36,9 +36,9 @@ jobs:
           ./build/example
       - name: Generate coverage reports with gcov
         run: |
-          cd cpp/build
-          find . -name "*.gcda" -type f -exec gcov-13 {} \;
-          cd ../..
+          cd cpp
+          find build -name "*.gcda" -type f -exec gcov-13 -r {} \;
+          cd ..
       - name: Debug gcov files
         run: |
           echo "Looking for source file .gcov files (expression, parser, tests):"
