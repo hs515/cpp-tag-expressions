@@ -38,6 +38,8 @@ jobs:
         run: |
           cd cpp
           find build -name "*.gcda" -type f -exec gcov-13 -p {} \;
+          # Move all .gcov files to build directory where SonarQube looks for them
+          find . -maxdepth 1 -name "*.gcov" -type f -exec mv {} build/ \;
           cd ..
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
