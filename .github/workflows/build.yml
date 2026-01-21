@@ -21,9 +21,7 @@ jobs:
         # Install build-essential and cmake using apt-get
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtest-dev build-essential
-      - name: Verify gcov installation
-        run: which gcov && gcov --version
+          sudo apt-get install -y libgtest-dev
       - name: Run Build Wrapper
         run: |
           cd cpp
@@ -37,7 +35,7 @@ jobs:
       - name: Generate coverage reports with gcov
         run: |
           cd cpp
-          find build -name "*.gcda" -type f -exec gcov-13 -p {} \;
+          find build -name "*.gcda" -type f -exec gcov -p {} \;
           # Move all .gcov files to build directory where SonarQube looks for them
           find . -maxdepth 1 -name "*.gcov" -type f -exec mv {} build/ \;
           cd ..
@@ -48,5 +46,5 @@ jobs:
         with:
           args: >
             --define "sonar.cfamily.compile-commands=cpp/${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
-            --define "sonar.cfamily.gcov.reportsPath=cpp/build"
+            #--define "sonar.cfamily.gcov.reportsPath=cpp/build"
 

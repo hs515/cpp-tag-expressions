@@ -42,6 +42,8 @@ if(CUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS)
         add_executable(tag_expressions_test
             tests/test_errors.cpp
             tests/test_evaluations.cpp
+            tests/test_expression.cpp
+            tests/test_parser.cpp
             tests/test_parsing.cpp
             tests/test_precedence.cpp
         )
