@@ -46,5 +46,4 @@ jobs:
         with:
           args: >
             --define "sonar.cfamily.compile-commands=cpp/${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
-            #--define "sonar.cfamily.gcov.reportsPath=cpp/build"
 
