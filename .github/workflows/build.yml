@@ -30,15 +30,12 @@ jobs:
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/
           cd build
           ctest --verbose
-          cd ..
-          ./build/example
       - name: Generate coverage reports with gcov
         run: |
           cd cpp
           find build -name "*.gcda" -type f -exec gcov -p {} \;
           # Move all .gcov files to build directory where SonarQube looks for them
           find . -maxdepth 1 -name "*.gcov" -type f -exec mv {} build/ \;
-          cd ..
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
         env:
