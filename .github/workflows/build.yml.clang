@@ -33,5 +33,5 @@ jobs:
 
       - name: Run Tests
         run: |
-          cd build/tests
+          cd cpp/build/tests
           ctest --verbose
