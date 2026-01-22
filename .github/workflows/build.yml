@@ -1,4 +1,4 @@
-name: Windows MSVC Build
+name: Build with GCC
 on:
   push:
     branches:
@@ -8,22 +8,48 @@ on:
 jobs:
   build:
     name: Build
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
+    env:
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
-      - name: Run build
-        # --config Release is important for multi-configuration generators like VS
+      - name: Install Build Wrapper
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v4
+
+      - name: Install Dependencies
+        # Install build-essential and cmake using apt-get
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtest-dev
+
+      - name: Run Build Wrapper
         run: |
           cd cpp
           mkdir build
-          cmake -B build -G "Visual Studio 17 2022"
-          cmake --build build --config Release
+          cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS=ON -DCUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE=ON
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build
 
-      - name: Run tests (if applicable)
-        # You can replace this with ctest, or a specific test runner command
+      - name: Run Tests
         run: |
-          cpp/build/example/Release/example.exe
+          cd build/tests
+          ctest --verbose
 
+      - name: Generate coverage reports with gcov
+        run: |
+          cd cpp
+          find build -name "*.gcda" -type f -exec gcov -p {} \;
+          # Move all .gcov files to build directory where SonarQube looks for them
+          find . -maxdepth 1 -name "*.gcov" -type f -exec mv {} build/ \;
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }} # Put the name of your token here
+        with:
+          args: >
+            --define "sonar.cfamily.compile-commands=cpp/${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
