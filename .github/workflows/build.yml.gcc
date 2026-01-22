@@ -27,7 +27,7 @@ jobs:
           cd cpp
           mkdir build
           cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS=ON -DCUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE=ON
-          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/
+          build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build
           cd build/tests
           ctest --verbose
       - name: Generate coverage reports with gcov
@@ -43,4 +43,3 @@ jobs:
         with:
           args: >
             --define "sonar.cfamily.compile-commands=cpp/${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json"
-
