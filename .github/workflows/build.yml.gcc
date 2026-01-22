@@ -1,4 +1,4 @@
-name: Build with CLANG
+name: Build with GCC
 on:
   push:
     branches:
@@ -21,12 +21,12 @@ jobs:
         # Install build-essential and cmake using apt-get
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtest-dev clang clang-tidy
+          sudo apt-get install -y libgtest-dev
       - name: Run Build Wrapper
         run: |
           cd cpp
           mkdir build
-          cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS=ON -DCUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS=ON -DCUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE=ON
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build/
           cd build/tests
           ctest --verbose
