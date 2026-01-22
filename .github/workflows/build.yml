@@ -25,5 +25,5 @@ jobs:
       - name: Run tests (if applicable)
         # You can replace this with ctest, or a specific test runner command
         run: |
-          cd build/tests
-          ctest --verbose --config Release
+          cpp/build/example/Release/example.exe
+
