@@ -1,6 +1,6 @@
 project(Cucumber-Tag-Expressions-Tests)
 
-if(CUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS)
+if(CUCUMBER_TAG_EXPRESSIONS_TESTS)
     enable_testing()
 
     # Find Google Test (if available)

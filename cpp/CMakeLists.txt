@@ -15,9 +15,9 @@ endif()
 # Options
 #
 ###
-option(CUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS	    "Enable build of the tests" OFF)
-option(CUCUMBER_TAG_EXPRESSIONS_COVERAGE	    "Enable instrumentation for code coverage" OFF)
-option(CUCUMBER_TAG_EXPRESSIONS_STRICT          "Additional and more strict checks" OFF)
+option(CUCUMBER_TAG_EXPRESSIONS_TESTS	    "Enable build of the tests" OFF)
+option(CUCUMBER_TAG_EXPRESSIONS_COVERAGE	"Enable instrumentation for code coverage" OFF)
+option(CUCUMBER_TAG_EXPRESSIONS_STRICT      "Additional and more strict checks" OFF)
 
 if(CUCUMBER_TAG_EXPRESSIONS_COVERAGE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
