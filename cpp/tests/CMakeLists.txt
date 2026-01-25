@@ -15,14 +15,6 @@ if(CUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS)
             src/test_precedence.cpp
         )
         
-        # Apply coverage flags to test executable
-        if(CUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE)
-            if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-                target_compile_options(tag_expressions_test PRIVATE -fprofile-arcs -ftest-coverage --coverage -O0 -g)
-                target_link_options(tag_expressions_test PRIVATE -fprofile-arcs -ftest-coverage --coverage)
-            endif()
-        endif()
-        
         target_link_libraries(tag_expressions_test
             PRIVATE
                 cucumber::tag-expressions

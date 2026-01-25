@@ -2,26 +2,30 @@ cmake_minimum_required(VERSION 3.15)
 project(Cucumber-Tag-Expressions VERSION 8.1.0 LANGUAGES CXX)
 
 # Set C++ standard
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+    set(CMAKE_CXX_STANDARD 17)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+elseif(CMAKE_CXX_STANDARD LESS 17)
+    message(FATAL_ERROR "C++17 (above) is required")
+endif()
 
 ###
 #
 # Options
 #
 ###
-option(
-    CUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS
-    "Enable build of the tests"
-    ${CUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS}
-)
+option(CUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS	    "Enable build of the tests" OFF)
+option(CUCUMBER_TAG_EXPRESSIONS_COVERAGE	    "Enable instrumentation for code coverage" OFF)
+option(CUCUMBER_TAG_EXPRESSIONS_STRICT          "Additional and more strict checks" OFF)
 
-option(
-    CUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE
-    "Enable compiler flags for code coverage measurements"
-    ${CUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE}
-)
+if(CUCUMBER_TAG_EXPRESSIONS_COVERAGE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage")
+endif()
+
+if(CUCUMBER_TAG_EXPRESSIONS_STRICT)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
+endif()
 
 ###
 #

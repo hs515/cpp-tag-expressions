@@ -24,7 +24,6 @@ jobs:
         uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v4
 
       - name: Install Dependencies
-        # Install build-essential and cmake using apt-get
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtest-dev
@@ -33,7 +32,7 @@ jobs:
         run: |
           cd cpp
           mkdir build
-          cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS=ON -DCUCUMBER_TAG_EXPRESSIONS_ENABLE_COVERAGE=ON
+          cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_TESTS=ON -DCUCUMBER_TAG_EXPRESSIONS_COVERAGE=ON -DCUCUMBER_TAG_EXPRESSIONS_STRICT=ON
           build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build build
 
       - name: Run Tests
@@ -70,7 +69,6 @@ jobs:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
 
       - name: Install Dependencies
-        # Install build-essential and cmake using apt-get
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtest-dev clang clang-tidy
@@ -79,7 +77,7 @@ jobs:
         run: |
           cd cpp
           mkdir build
-          cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_BUILD_TESTS=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+          cmake -S . -B build -DCUCUMBER_TAG_EXPRESSIONS_TESTS=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
           cmake --build build
 
       - name: Run Tests
